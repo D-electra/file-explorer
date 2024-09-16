@@ -43,16 +43,15 @@ function waitForInput() {
 	if (FileSystem.isDirectory(newPath)) {
 		folderPath = newPath;
 		folderFiles = getFolderFiles(folderPath);
-		Display.refresh();
-	} else {
+	} else
 		Sys.command(newPath);
-	}
+
+	Display.refresh();
 }
 
 class Display {
 	public static function refresh() {
-		Sys.command('cls');
-
+		Sys.println('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'); // kill me
 		Sys.println(Ansi.wrap(getHeaderDisplay(folderPath), [BLACK, WHITE_BACK]));
 		Sys.println('');
 		for (file in folderFiles) Sys.println(getFileDisplay(file));
