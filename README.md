@@ -1,4 +1,4 @@
-# CMD Explorer
+# CLI Explorer
 
 Simple command line file explorer written in Haxe
 
