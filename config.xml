@@ -1,0 +1,7 @@
+<xml>
+
+	<!-- additional extensions -->
+	<assoc ext="webp" type="picture"/>
+	<assoc ext="webm" type="video"/>
+
+</xml>

@@ -1,70 +1,51 @@
+import haxe.io.Eof;
+import haxe.io.BytesBuffer;
+import sys.io.Process;
 import sys.FileSystem;
 import haxe.io.Path;
 
 using StringTools;
 
-// final navPrefix = ' ←  →  ↑  ⟳  | ';
-// final navPrefix = ' ←  →  ↑  | ';
-final navPrefix = '';
-
-var folderPath:String;
-var folderFiles:Array<FileInfo>;
+var args:Array<String> = [];
+var path:String;
 
 function main() {
-	folderPath = Sys.args()[0] ?? '';
-	folderPath = Path.normalize(folderPath.trim());
-	if (folderPath == '') folderPath = Path.normalize(Sys.getCwd());
-	if (!FileSystem.isDirectory(folderPath)) throw new haxe.exceptions.ArgumentException('path');
+	args = Sys.args();
 
-	folderFiles = getFolderFiles(folderPath);
-	Display.refresh();
+	path = args.shift()?.trim() ?? '';
+	if (path == '') path = Sys.getCwd();
+
+	if (!FileSystem.isDirectory(path)) throw new haxe.exceptions.ArgumentException('path');
+
+	Config.load();
+
+	Display.printFolder(path);
 
 	while (true) waitForInput();
 }
 
-function getFolderFiles(path:String):Array<FileInfo> {
-	var result = [for (file in FileSystem.readDirectory(folderPath)) new FileInfo(Path.join([folderPath, file]))];
-	result.sort((a, b) -> {
-		if (a.name > b.name) return -1;
-		else if (a.name < b.name) return 1;
-		else return 0;
-	});
-	result.sort((a, b) -> {
-		if (a.isFolder && !b.isFolder) return -1;
-		else if (!a.isFolder && b.isFolder) return 1;
-		else return 0;
-	});
-	return result;
-}
-
 function waitForInput() {
-	var input = Sys.stdin().readLine();
-	var newPath = Path.join([folderPath, input]);
-	if (FileSystem.isDirectory(newPath)) {
-		folderPath = newPath;
-		folderFiles = getFolderFiles(folderPath);
-	} else
-		Sys.command(newPath);
+	Sys.print('Open: ');
+	try {
+		var input = readInput();
+		var newPath = Path.join([path, input]);
+		if (FileSystem.isDirectory(newPath)) path = newPath;
+		else Sys.command(newPath); // TODO: remove process outputs
 
-	Display.refresh();
+		Display.printFolder(path);
+	} catch(e) Sys.println('\nError: $e');
 }
 
-class Display {
-	public static function refresh() {
-		Sys.println('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'); // kill me
-		Sys.println(Ansi.wrap(getHeaderDisplay(folderPath), [BLACK, WHITE_BACK]));
-		Sys.println('');
-		for (file in folderFiles) Sys.println(getFileDisplay(file));
-		Sys.println('');
+function readInput() {
+	var buf = new BytesBuffer();
+	var last = 0, s = '';
+	try {
+		while ((last = Sys.stdin().readByte()) != 10) buf.addByte(last);
+		s = buf.getBytes().getString(0, buf.length, RawNative);
+		if (s.charCodeAt(s.length - 1) == 13) s = s.substr(0, -1);
+	} catch(e) {
+		s = buf.getBytes().getString(0, buf.length, RawNative);
+		if (s.length == 0) Sys.println('\nError: $e');
 	}
-
-	public static function getHeaderDisplay(path:String):String {
-		var formattedPath = Path.normalize(path).split('/').join(' > ');
-		return '$navPrefix $formattedPath ';
-	}
-
-	private static final spaces = ''.lpad(' ', navPrefix.length - 4);
-	public static function getFileDisplay(file:FileInfo):String {
-		return file.isFolder ? '$spaces🗀  ${file.name}' : '$spaces🗎  ${file.name}';
-	}
+	return s;
 }
